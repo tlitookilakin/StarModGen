@@ -1,0 +1,7 @@
+﻿global using static StarModGen.Demo.Constants;
+namespace StarModGen.Demo;
+
+public static class Constants
+{
+	public const string MOD_ID = "{{ModId}}";
+}

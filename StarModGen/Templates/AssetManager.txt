@@ -1,0 +1,57 @@
+﻿{%- if Entry.Space -%}
+namespace {{Entry.Space}};
+{% endif -%}
+
+partial class {{Entry.Type}}
+{
+	{%- for prop in LocalProps %}
+	private global::StardewModdingAPI.IAssetName _nameof_{{prop.Prop}} = null!;
+	private {{prop.PropType}}? _{{ prop.Prop }} = null;
+	{{prop.access}}partial {{prop.PropType}} {{prop.Prop}}
+		=> _{{prop.Prop}} ??= global::StardewValley.Game1.content.Load<{{prop.PropType}}>({{prop.Asset}});
+	{% endfor %}
+
+	{{Entry.access}}partial void {{Entry.Method}}(StardewModdingAPI.IModHelper helper)
+	{
+		helper.Events.Content.AssetsInvalidated += _AssetsInvalidatedImpl;
+		helper.Events.Content.AssetRequested += _AssetRequestedImpl;
+		{% for prop in LocalProps %}
+		_nameof_{{prop.Prop}} = helper.GameContent.ParseAssetName({{prop.Asset}});
+		{%- endfor %}
+	}
+
+	private void _AssetsInvalidatedImpl(object? sender, StardewModdingAPI.Events.AssetsInvalidatedEventArgs e)
+	{
+		foreach (var name in e.NamesWithoutLocale) 
+		{
+			{%- assign first = true -%}
+			{% for prop in LocalProps %}
+			{% unless first -%}else {% endunless -%} 
+			if (name.Equals(_nameof_{{prop.Prop}})) 
+			{
+				_{{prop.Prop}} = null;
+				{%- if Entry.IsNotify %}
+				PropertyChanged?.Invoke(this, new(nameof({{prop.Prop}})));
+				{%- endif %}
+			}
+			{%- assign first = false -%}
+			{%- endfor %}
+		}
+	}
+
+	private void _AssetRequestedImpl(object? sender, StardewModdingAPI.Events.AssetRequestedEventArgs e)
+	{
+		var name = e.NameWithoutLocale;
+
+		{% assign first = true -%}
+		{%- for prop in LocalProps -%}
+		{%- if prop.Local %}
+		{%- unless first -%}else {% endunless -%}
+		if (name.Equals(_nameof_{{prop.Prop}}))
+		{
+			e.LoadFromModFile<{{prop.PropType}}>("{{prop.Local}}", StardewModdingAPI.Events.AssetLoadPriority.Medium);
+		}
+		{% endif %}
+		{%- endfor %}
+	}
+}

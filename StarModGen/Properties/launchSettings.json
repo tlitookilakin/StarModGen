@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "StarModGen": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\StarModGen.Demo\\StarModGen.Demo.csproj"
+    }
+  }
+}

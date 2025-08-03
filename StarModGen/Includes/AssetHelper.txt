@@ -1,0 +1,90 @@
+﻿using StardewModdingAPI;
+using System.Reflection;
+
+namespace StarModGen.Utils;
+
+public static class AssetHelper
+{
+	private static readonly Dictionary<Type, Action<object, string>> ListEditCache = [];
+	private static readonly Dictionary<Type, Action<object, string>> DictEditCache = [];
+	private static readonly MethodInfo ListEditBase = typeof(AssetHelper).GetMethod(nameof(EditList))!;
+	private static readonly MethodInfo DictEditBase = typeof(AssetHelper).GetMethod(nameof(EditDict))!;
+	private static readonly MethodInfo IncludeBase = typeof(AssetHelper).GetMethod(nameof(Include))!;
+	private static bool initialized = false;
+	private static IModHelper Helper = null!;
+	private static IAssetName LangAsset = null!;
+
+	public static void Init(IModHelper helper)
+	{
+		if (initialized)
+			return;
+
+		initialized = true;
+
+		Helper = helper;
+		LangAsset = helper.GameContent.ParseAssetName("Mods/" + MOD_ID + "/Strings");
+		helper.Events.Content.AssetRequested += AssetRequested;
+	}
+
+	private static void AssetRequested(object? sender, StardewModdingAPI.Events.AssetRequestedEventArgs e)
+	{
+		if (!e.NameWithoutLocale.Equals(LangAsset))
+			return;
+
+		e.LoadFrom(() => new Dictionary<string, string>(
+			Helper.Translation.GetTranslations().Select(
+				static t => new KeyValuePair<string, string>(t.Key, t)
+			)
+		), StardewModdingAPI.Events.AssetLoadPriority.High);
+	}
+
+	private static Action<object, string> GetEditor(Type type, Dictionary<Type, Action<object, string>> cache, MethodInfo basem)
+	{
+		if (!cache.TryGetValue(type, out var editor))
+			cache.Add(
+				type, editor = basem
+				.MakeGenericMethod(type)
+				.CreateDelegate<Action<object, string>>()
+			);
+
+		return editor;
+	}
+
+	public static Action<IAssetData> BindInclude(string source)
+	{
+		return IncludeBase.CreateDelegate<Action<IAssetData>>(source);
+	}
+
+	public static void Include(string source, IAssetData data)
+	{
+		var type = data.DataType;
+		if (!type.IsGenericType)
+			return;
+
+		var baseType = data.DataType.GetGenericTypeDefinition();
+		Action<object, string> edit;
+
+		if (baseType == typeof(List<>))
+			edit = GetEditor(type.GenericTypeArguments[0], ListEditCache, ListEditBase);
+
+		else if (baseType == typeof(Dictionary<,>) && type.GenericTypeArguments[0] == typeof(string))
+			edit = GetEditor(type.GenericTypeArguments[0], DictEditCache, DictEditBase);
+
+		else return;
+
+		edit(data.Data, source);
+	}
+
+	public static void EditList<T>(object value, string source)
+	{
+		var list = (List<T>)value;
+		list.AddRange(Helper.ModContent.Load<IEnumerable<T>>(source));
+	}
+
+	public static void EditDict<T>(object value, string source)
+	{
+		var dict = (Dictionary<string, T>)value;
+		foreach ((var key, var val) in Helper.ModContent.Load<Dictionary<string, T>>(source))
+			dict[MOD_ID + '_' + key] = val;
+	}
+}
