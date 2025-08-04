@@ -51,6 +51,9 @@ namespace StarModGen
 
 		public static string ToVarname(this string asset)
 		{
+			int dot = asset.LastIndexOf('.');
+			if (dot > 0)
+				asset = asset[..dot];
 			return asset.Replace('/', '_').Replace('\\', '_');
 		}
 

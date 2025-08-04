@@ -93,7 +93,7 @@ namespace StarModGen.Generators
 						ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 						((string)args[0].Value!),
 						((string)args[1].Value!),
-						((string)args[0].Value!).ToVarname()
+						((string)args[1].Value!).ToVarname()
 					);
 				}
 			);
