@@ -57,7 +57,7 @@ partial class {{Entry.Type}}
 			{% if asset.Prop.Local -%}
 			e.LoadFromModFile<{{asset.Prop.PropType}}>("{{asset.Prop.Local}}", StardewModdingAPI.Events.AssetLoadPriority.Medium);
 			{%- elsif asset.Load -%}
-			e.LoadFrom({{asset.Load.Method}}, global::StardewModdingAPI.Events.AssetLoadPriority.High);
+			e.LoadFrom({{asset.Load.Method}}, global::StardewModdingAPI.Events.AssetLoadPriority.Medium);
 			{%- endif -%}
 			{%- for include in asset.Includes -%}
 			e.Edit(_include_{{include.SourceVar}});
