@@ -5,15 +5,7 @@ namespace StarModGen.Lib
 {
 	[Conditional("STARMOD_ATTRS")]
 	[AttributeUsage(AttributeTargets.Method)]
-	public class AssetIncludeAttribute : Attribute
+	public class AssetIncludeAttribute(string name, string source) : Attribute
 	{
-		public string Name { get; set; }
-		public string Source { get; set; }
-
-		public AssetIncludeAttribute(string name, string source)
-		{
-			Name = name;
-			Source = source;
-		}
 	}
 }

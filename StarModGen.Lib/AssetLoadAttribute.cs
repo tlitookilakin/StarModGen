@@ -5,7 +5,7 @@ namespace StarModGen.Lib
 {
 	[Conditional("STARMOD_ATTRS")]
 	[AttributeUsage(AttributeTargets.Method)]
-	public class AssetEditAttribute(string Name) : Attribute
+	public class AssetLoadAttribute(string Name) : Attribute
 	{
 	}
 }

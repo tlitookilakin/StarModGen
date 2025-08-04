@@ -49,6 +49,11 @@ namespace StarModGen
 			};
 		}
 
+		public static string ToVarname(this string asset)
+		{
+			return asset.Replace('/', '_').Replace('\\', '_');
+		}
+
 		public static string MakeLocal(this string name)
 		{
 			if (name.Length is 0 || name[0] is not '/')

@@ -4,19 +4,26 @@ namespace {{Entry.Space}};
 
 partial class {{Entry.Type}}
 {
+	{%- for asset in Assets %}
+	private global::StardewModdingAPI.IAssetName _nameof_{{asset.VarName}} = null!;
+	{%- endfor %}
+	{%- for include in IncludeSources %}
+	private readonly global::System.Action<global::StardewModdingAPI.IAssetData> _include_{{include[1]}}
+		= StarModGen.Utils.AssetHelper.BindInclude("{{include[0]}}");
+	{%- endfor %}
 	{%- for prop in LocalProps %}
-	private global::StardewModdingAPI.IAssetName _nameof_{{prop.Prop}} = null!;
 	private {{prop.PropType}}? _{{ prop.Prop }} = null;
 	{{prop.access}}partial {{prop.PropType}} {{prop.Prop}}
-		=> _{{prop.Prop}} ??= global::StardewValley.Game1.content.Load<{{prop.PropType}}>({{prop.Asset}});
+		=> _{{prop.Prop}} ??= global::StardewValley.Game1.content.Load<{{prop.PropType}}>({{prop.RawAsset}});
 	{% endfor %}
 
 	{{Entry.access}}partial void {{Entry.Method}}(StardewModdingAPI.IModHelper helper)
 	{
+		StarModGen.Utils.AssetHelper.Init(helper);
 		helper.Events.Content.AssetsInvalidated += _AssetsInvalidatedImpl;
 		helper.Events.Content.AssetRequested += _AssetRequestedImpl;
-		{% for prop in LocalProps %}
-		_nameof_{{prop.Prop}} = helper.GameContent.ParseAssetName({{prop.Asset}});
+		{% for asset in Assets %}
+		_nameof_{{asset.VarName}} = helper.GameContent.ParseAssetName({{asset.Target}});
 		{%- endfor %}
 	}
 
@@ -24,17 +31,17 @@ partial class {{Entry.Type}}
 	{
 		foreach (var name in e.NamesWithoutLocale) 
 		{
-			{%- assign first = true -%}
-			{% for prop in LocalProps %}
-			{% unless first -%}else {% endunless -%} 
-			if (name.Equals(_nameof_{{prop.Prop}})) 
+			{%- for asset in Assets -%}
+			{%- if asset.Prop %}
+			{% unless forloop.first -%}else {% endunless -%}
+			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
-				_{{prop.Prop}} = null;
+				_{{asset.Prop.Prop}} = null;
 				{%- if Entry.IsNotify %}
-				PropertyChanged?.Invoke(this, new(nameof({{prop.Prop}})));
+				PropertyChanged?.Invoke(this, new(nameof({{asset.Prop.Prop}})));
 				{%- endif %}
 			}
-			{%- assign first = false -%}
+			{%- endif %}
 			{%- endfor %}
 		}
 	}
@@ -43,15 +50,22 @@ partial class {{Entry.Type}}
 	{
 		var name = e.NameWithoutLocale;
 
-		{% assign first = true -%}
-		{%- for prop in LocalProps -%}
-		{%- if prop.Local %}
-		{%- unless first -%}else {% endunless -%}
-		if (name.Equals(_nameof_{{prop.Prop}}))
+		{% for asset in Assets %}
+		{%- unless forloop.first -%}else {% endunless -%}
+		if (name.Equals(_nameof_{{asset.VarName}}))
 		{
-			e.LoadFromModFile<{{prop.PropType}}>("{{prop.Local}}", StardewModdingAPI.Events.AssetLoadPriority.Medium);
+			{% if asset.Prop.Local -%}
+			e.LoadFromModFile<{{asset.Prop.PropType}}>("{{asset.Prop.Local}}", StardewModdingAPI.Events.AssetLoadPriority.Medium);
+			{%- elsif asset.Load -%}
+			e.LoadFrom({{asset.Load.Method}}, global::StardewModdingAPI.Events.AssetLoadPriority.High);
+			{%- endif -%}
+			{%- for include in asset.Includes -%}
+			e.Edit(_include_{{include.SourceVar}});
+			{%- endfor -%}
+			{%- for edit in asset.Edits -%}
+			e.Edit({{edit.Method}});
+			{%- endfor %}
 		}
-		{% endif %}
-		{%- endfor %}
+		{% endfor %}
 	}
 }
