@@ -32,7 +32,7 @@ partial class {{Entry.Type}}
 		foreach (var name in e.NamesWithoutLocale) 
 		{
 			{%- for asset in Assets -%}
-			{%- if asset.Prop %}
+			{%- if asset.Prop and asset.isProperty %}
 			{% unless forloop.first -%}else {% endunless -%}
 			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
@@ -51,6 +51,7 @@ partial class {{Entry.Type}}
 		var name = e.NameWithoutLocale;
 
 		{% for asset in Assets %}
+		{%- if asset.HasAnyHandlers -%}
 		{%- unless forloop.first -%}else {% endunless -%}
 		if (name.Equals(_nameof_{{asset.VarName}}))
 		{
@@ -66,6 +67,7 @@ partial class {{Entry.Type}}
 			e.Edit({{edit.Method}});
 			{%- endfor %}
 		}
+		{% endif -%}
 		{% endfor %}
 	}
 }

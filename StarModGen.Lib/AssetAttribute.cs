@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace StarModGen.Lib
 {
 	[Conditional("STARMOD_ATTRS")]
-	[AttributeUsage(AttributeTargets.Property)]
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
 	public class AssetAttribute : Attribute
 	{
 

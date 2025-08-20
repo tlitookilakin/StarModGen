@@ -64,5 +64,14 @@ namespace StarModGen
 
 			return $"\"Mods/\" + MOD_ID + \"{name}\"";
 		}
+
+		public static string GuessTypeByName(this string file)
+			=> Path.GetExtension(file).ToLowerInvariant() switch
+				{
+					".png" => "global::Microsoft.Xna.Framework.Graphics.Texture2D",
+					".tmx" or ".tbin" => "global::xTile.Map",
+					".json" => "object",
+					_ => ""
+				};
 	}
 }

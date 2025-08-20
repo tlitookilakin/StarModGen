@@ -14,6 +14,7 @@ namespace StarModGen.Demo
 
 		[AssetEntry]
 		[AssetInclude("Data/Objects", "assets/ObjectIncludes.json")]
+		[Asset("/MyImage", "assets/thing.png")]
 		public partial void Setup(IModHelper helper);
 
 		[AssetEdit("Data/Shops")]
