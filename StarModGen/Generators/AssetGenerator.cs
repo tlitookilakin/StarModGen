@@ -269,6 +269,9 @@ namespace StarModGen.Generators
 				if (a.Type != fullName)
 					continue;
 
+				if (a.PropType.Length is 0)
+					continue;
+
 				if (Groups.TryGetValue(a.Asset, out var g))
 				{
 					if (g.Prop is AssetProperty p && g.isProperty)
