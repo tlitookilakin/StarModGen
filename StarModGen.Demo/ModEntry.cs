@@ -10,6 +10,8 @@ namespace StarModGen.Demo
 		{
 			Assets = new();
 			Assets.Setup(helper);
+
+			Enum.TryParse<Config.Styles>("", true, out var p);
 		}
 	}
 }

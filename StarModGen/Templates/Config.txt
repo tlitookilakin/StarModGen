@@ -1,0 +1,87 @@
+﻿namespace {{Type.space}};
+
+partial class {{Type.type}}
+{
+	private StardewModdingAPI.IModHelper _helper = null!;
+	private StardewModdingAPI.IManifest _manifest = null!;
+
+#pragma warning disable CS8618
+	public {{Type.type}}()
+	{
+		_SetDefaults();
+	}
+#pragma warning restore CS8618
+
+	private void _SetDefaults()
+	{
+		{%- for prop in Props %}
+		{{prop.name}} = {{prop.defaultValue}};
+		{%- endfor %}
+		Reset?.Invoke(this);
+	}
+
+	private void _Reset()
+	{
+		_SetDefaults();
+		Reset?.Invoke(this);
+	}
+
+	internal static partial {{Type.type}} Create(StardewModdingAPI.IModHelper helper, StardewModdingAPI.IManifest manifest)
+	{
+		var cfg = helper.ReadConfig<{{Type.type}}>();
+		cfg._helper = helper;
+		cfg._manifest = manifest;
+
+		if (helper.ModRegistry.IsLoaded("spacechase0.GenericModConfigMenu"))
+			helper.Events.GameLoop.GameLaunched += cfg._Register;
+
+		return cfg;
+	}
+
+	private void _Apply()
+	{
+		Applied?.Invoke(this);
+	}
+
+	private void _Register(object? s, StardewModdingAPI.Events.GameLaunchedEventArgs ev)
+	{
+		var gmcm = _helper.ModRegistry.GetApi<StarModGen.Utils.IGMCMApi>("spacechase0.GenericModConfigMenu")!;
+		var i18n = _helper.Translation;
+
+		gmcm.Register(_manifest, _Reset, _Apply, {{Type.titleOnly}});
+		Registering?.Invoke(this, gmcm);
+
+		{% for page in Pages -%}
+			{%- if page.Key -%}
+			gmcm.AddPage(_manifest, page.Key, () => i18n.Get("config.page.{{page.Key}}.name"));
+			{% endif -%}
+		{%- for prop in page -%}
+		{% case prop.type %}
+			{%- when "Bool" -%} gmcm.AddBoolOption(
+			{%- when "String" or "Enum" -%} gmcm.AddTextOption(
+			{%- when "Int" or "Float" -%} gmcm.AddNumberOption(
+			{%- when "KeyBind" -%} gmcm.AddKeybind(
+			{%- when "KeyBindList" -%} gmcm.AddKeybindList(
+		{%- endcase %}
+			{%- if prop.type == "Enum" %}
+			_manifest, () => {{prop.name}}.ToString(), 
+			v => {{prop.name}} = Enum.TryParse<{{prop.typeName}}>(v, true, out var p) ? p : {{prop.name}},
+			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
+			Enum.GetNames<{{prop.typeName}}>(), s => i18n.Get($"config.{{prop.simpleType}}.{s}"),
+			{%- else %}
+			_manifest, () => {{prop.name}}, v => {{prop.name}} = v,
+			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
+			{%- endif %}
+			fieldId: "{{prop.name}}"
+		);
+		{% endfor %}
+		{% endfor -%}
+			gmcm.AddPage(_manifest, null);
+		{% for page in Pages -%}
+		{%- if page.Key %}
+			gmcm.AddPageLink(_manifest, page.Key, () => i18n.Get("config.page.{{page.Key}}.name"), () => i18n.Get("config.page.{{page.Key}}.desc"));
+		{% endif %}
+		{%- endfor -%}
+		Registered?.Invoke(this, gmcm);
+	}
+}

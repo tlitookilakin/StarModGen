@@ -7,7 +7,6 @@ namespace StarModGen.Lib
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
 	public class AssetAttribute : Attribute
 	{
-
 		public AssetAttribute(string Name)
 		{
 		}

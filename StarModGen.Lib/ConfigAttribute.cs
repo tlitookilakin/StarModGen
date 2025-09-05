@@ -5,8 +5,8 @@ using System.Diagnostics;
 namespace StarModGen.Lib
 {
 	[Conditional("STARMOD_ATTRS")]
-	[AttributeUsage(AttributeTargets.Method)]
-	public class AssetLoadAttribute(string Name) : Attribute
+	[AttributeUsage(AttributeTargets.Class)]
+	public class ConfigAttribute(bool TitleOnly) : Attribute
 	{
 	}
 }
