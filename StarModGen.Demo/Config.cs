@@ -13,7 +13,7 @@ namespace StarModGen.Demo
 		[ConfigValue(0, "Pricing")]
 		public int ThingPrice { get; set; }
 
-		[ConfigValue(Styles.Checkered, null)]
+		[ConfigValue(Styles.Checkered)]
 		public Styles ThingStyle { get; set; }
 	}
 }

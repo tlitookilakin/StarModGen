@@ -1,7 +1,9 @@
 ﻿using Fluid;
+using Fluid.Values;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using StarModGen.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +24,11 @@ namespace StarModGen.Generators
 			options.MemberAccessStrategy.Register<ConfigType>();
 			options.MemberAccessStrategy.Register<ConfigProperty>();
 			options.MemberAccessStrategy.Register<TemplateData>();
+
 			options.ValueConverters.Add(static v => v is Enum e ? e.ToString() : null);
+			options.ValueConverters.Add(
+				static v => v is IGrouping<string?, ConfigProperty> g ? new StringGroupConverter<ConfigProperty>(g) : null
+			);
 
 			var configs = ctx.SyntaxProvider.ForAttributeWithMetadataName<ConfigType>("StarModGen.Lib.ConfigAttribute",
 				static (node, cancel) => node is ClassDeclarationSyntax c && c.Modifiers.Any(SyntaxKind.PartialKeyword),
@@ -43,7 +49,7 @@ namespace StarModGen.Generators
 					ctx.Attributes[0].ConstructorArguments[0].ToCSharpString(),
 					((IPropertySymbol)ctx.TargetSymbol).Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 					((IPropertySymbol)ctx.TargetSymbol).Type.Name,
-					ctx.Attributes[0].ConstructorArguments.Length > 1 ? (string?)ctx.Attributes[0].ConstructorArguments[1].Value : null
+					ctx.Attributes[0].ConstructorArguments.Length > 1 ? ctx.Attributes[0].ConstructorArguments[1].Value?.ToString() : null
 				)
 			);
 

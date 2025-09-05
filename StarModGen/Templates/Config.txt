@@ -51,37 +51,42 @@ partial class {{Type.type}}
 		gmcm.Register(_manifest, _Reset, _Apply, {{Type.titleOnly}});
 		Registering?.Invoke(this, gmcm);
 
-		{% for page in Pages -%}
-			{%- if page.Key -%}
-			gmcm.AddPage(_manifest, page.Key, () => i18n.Get("config.page.{{page.Key}}.name"));
-			{% endif -%}
-		{%- for prop in page -%}
+		{%- for page in Pages %}
+
+		{% if page -%}
+			gmcm.AddPage(_manifest, "{{page}}", () => i18n.Get("config.page.{{page}}.name"));
+		{%- else -%}
+			gmcm.AddPage(_manifest, null);
+		{%- endif -%}
+		{%- for prop in page %}
 		{% case prop.type %}
 			{%- when "Bool" -%} gmcm.AddBoolOption(
 			{%- when "String" or "Enum" -%} gmcm.AddTextOption(
 			{%- when "Int" or "Float" -%} gmcm.AddNumberOption(
 			{%- when "KeyBind" -%} gmcm.AddKeybind(
 			{%- when "KeyBindList" -%} gmcm.AddKeybindList(
-		{%- endcase %}
-			{%- if prop.type == "Enum" %}
+		{% endcase %}
+			{%- if prop.type == "Enum" -%}
 			_manifest, () => {{prop.name}}.ToString(), 
 			v => {{prop.name}} = Enum.TryParse<{{prop.typeName}}>(v, true, out var p) ? p : {{prop.name}},
 			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
 			Enum.GetNames<{{prop.typeName}}>(), s => i18n.Get($"config.{{prop.simpleType}}.{s}"),
-			{%- else %}
+			{%- else -%}
 			_manifest, () => {{prop.name}}, v => {{prop.name}} = v,
 			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
 			{%- endif %}
 			fieldId: "{{prop.name}}"
 		);
-		{% endfor %}
-		{% endfor -%}
-			gmcm.AddPage(_manifest, null);
-		{% for page in Pages -%}
-		{%- if page.Key %}
-			gmcm.AddPageLink(_manifest, page.Key, () => i18n.Get("config.page.{{page.Key}}.name"), () => i18n.Get("config.page.{{page.Key}}.desc"));
-		{% endif %}
-		{%- endfor -%}
+		{%- endfor %}
+		{%- endfor %}
+
+		gmcm.AddPage(_manifest, null);
+		{%- for page in Pages -%}
+		{%- if page %}
+		gmcm.AddPageLink(_manifest, "{{page}}", () => i18n.Get("config.page.{{page.Key}}.name"), () => i18n.Get("config.page.{{page}}.desc"));
+		{%- endif -%}
+		{%- endfor %}
+
 		Registered?.Invoke(this, gmcm);
 	}
 }
