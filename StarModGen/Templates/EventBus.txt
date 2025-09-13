@@ -1,0 +1,15 @@
+﻿namespace StardModGen.Utils;
+
+internal static partial class EventBus 
+{
+	public static partial void Register(StardewModdingAPI.IModHelper Helper)
+	{
+		{%- for Group in Handlers -%}
+		{% if Group -%}
+		{% for hook in Group %}
+		{{Group}} += {{hook.owner}}.{{hook.method}};
+		{%- endfor %}
+		{%- endif %}
+		{%- endfor %}
+	}
+}

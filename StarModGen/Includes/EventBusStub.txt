@@ -1,0 +1,6 @@
+﻿namespace StardModGen.Utils;
+
+internal static partial class EventBus 
+{
+	public static partial void Register(StardewModdingAPI.IModHelper Helper);
+}
