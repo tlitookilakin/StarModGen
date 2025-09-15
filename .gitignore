@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 StarModGen.Demo/GeneratedSources/
+/StarModGen.Demo/manifest.json
