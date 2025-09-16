@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.IO;
 using System.Reflection;
 
@@ -23,7 +24,7 @@ namespace StarModGen
 			return reader.ReadToEnd();
 		}
 
-		public static void AddIncludes(this IncrementalGeneratorPostInitializationContext ctx, params string[] includes)
+		public static void AddIncludes(Action<string, string> addWith, params string[] includes)
 		{
 			var asm = Assembly.GetExecutingAssembly();
 			var asmName = asm.GetName().Name;
@@ -32,7 +33,7 @@ namespace StarModGen
 			{
 				using var stream = asm.GetManifestResourceStream($"{asmName}.Includes.{include}.txt");
 				using var reader = new StreamReader(stream);
-				ctx.AddSource(include, reader.ReadToEnd());
+				addWith(include, reader.ReadToEnd());
 			}
 		}
 

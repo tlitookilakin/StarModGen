@@ -14,7 +14,6 @@ namespace StarModGen.Generators
 	public class AssetGenerator : IIncrementalGenerator
 	{
 		private IFluidTemplate? Template;
-		private IFluidTemplate? Constants;
 		private readonly TemplateOptions options = new();
 		private readonly FluidParser parser = new();
 
@@ -23,7 +22,6 @@ namespace StarModGen.Generators
 			options.MemberAccessStrategy.Register<TemplateData>();
 			options.MemberAccessStrategy.Register<AssetEntryMethod>();
 			options.MemberAccessStrategy.Register<AssetProperty>();
-			options.MemberAccessStrategy.Register<ConstantData>();
 			options.MemberAccessStrategy.Register<AssetGroup>();
 			options.MemberAccessStrategy.Register<AssetEdit>();
 			options.MemberAccessStrategy.Register<AssetLoad>();
@@ -121,19 +119,9 @@ namespace StarModGen.Generators
 				.Combine(assetLoads.Collect())
 				.Combine(anonLoads.Collect());
 
-			var cfg = ctx.AnalyzerConfigOptionsProvider.Select(static (cfg, cancel) =>
-				cfg.GlobalOptions.TryGetValue("build_property.UniqueId", out var v) ? v : ""
-			);
-
 			ctx.RegisterPostInitializationOutput(static ctx => 
 			{
-				ctx.AddIncludes("AssetHelper");
-			});
-
-			ctx.RegisterSourceOutput(cfg, (ctx, cfg) =>
-			{
-				var data = new ConstantData(cfg);
-				ctx.AddSource("Constants", Constants.Render(new(data, options)));
+				Utilities.AddIncludes(ctx.AddSource, "AssetHelper");
 			});
 
 			ctx.RegisterImplementationSourceOutput(grouped, (ctx, val) => 
@@ -142,9 +130,6 @@ namespace StarModGen.Generators
 			});
 
 			if(!parser.TryParse(Utilities.GetTemplate("AssetManager"), out Template, out string error))
-				throw new Exception(error);
-
-			if(!parser.TryParse(Utilities.GetTemplate("Constants"), out Constants, out error))
 				throw new Exception(error);
 		}
 
@@ -157,7 +142,6 @@ namespace StarModGen.Generators
 		private record struct AssetInclude(string Owner, string Target, string Source, string SourceVar);
 		private record struct AssetEdit(string Owner, string Method, string Target);
 		private record struct AssetLoad(string Owner, string Method, string Target);
-		private record struct ConstantData(string ModId);
 
 		private class AssetGroup
 		{
