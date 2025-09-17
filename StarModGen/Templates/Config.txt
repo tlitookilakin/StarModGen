@@ -5,6 +5,27 @@ partial class {{Type.type}}
 	private StardewModdingAPI.IModHelper _helper = null!;
 	private StardewModdingAPI.IManifest _manifest = null!;
 
+	{%- for prop in Props -%}
+	{%- if prop.HasRange and prop.Range.partial %}
+
+	public partial {{prop.Prop.typeName}} {{prop.Prop.name}} 
+	{
+		get => _{{prop.Prop.name}};
+		set => _{{prop.Prop.name}} = 
+		{%- if prop.Prop.type == "Float" %} (float) {%- endif %}
+		{%- if prop.Range.Min != "null" %} Math.Max({{prop.Range.min}},
+		{%- endif -%}
+		{%- if prop.Range.Max != "null" %} Math.Min({{prop.Range.max}},
+		{%- endif %} value
+		{%- if prop.Range.Step != "null" %} - (value % {{prop.Range.step}}) {%- endif -%}
+		{%- if prop.Range.Min != "null" -%} ) {%- endif -%}
+		{%- if prop.Range.Max != "null" -%} ) {%- endif -%}
+		;
+	}
+	private {{prop.Prop.typeName}} _{{prop.Prop.name}};
+	{%- endif -%}
+	{%- endfor %}
+
 #pragma warning disable CS8618
 	public {{Type.type}}()
 	{
@@ -15,7 +36,7 @@ partial class {{Type.type}}
 	private void _SetDefaults()
 	{
 		{%- for prop in Props %}
-		{{prop.name}} = {{prop.defaultValue}};
+		{{prop.Prop.name}} = {{prop.Prop.defaultValue}};
 		{%- endfor %}
 		Reset?.Invoke(this);
 	}
@@ -59,23 +80,30 @@ partial class {{Type.type}}
 			gmcm.AddPage(_manifest, null);
 		{%- endif -%}
 		{%- for prop in page %}
-		{% case prop.type %}
+		{% case prop.Prop.type %}
 			{%- when "Bool" -%} gmcm.AddBoolOption(
 			{%- when "String" or "Enum" -%} gmcm.AddTextOption(
 			{%- when "Int" or "Float" -%} gmcm.AddNumberOption(
 			{%- when "KeyBind" -%} gmcm.AddKeybind(
 			{%- when "KeyBindList" -%} gmcm.AddKeybindList(
 		{% endcase %}
-			{%- if prop.type == "Enum" -%}
-			_manifest, () => {{prop.name}}.ToString(), 
-			v => {{prop.name}} = Enum.TryParse<{{prop.typeName}}>(v, true, out var p) ? p : {{prop.name}},
-			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
-			Enum.GetNames<{{prop.typeName}}>(), s => i18n.Get($"config.{{prop.simpleType}}.{s}"),
+			{%- if prop.Prop.type == "Enum" -%}
+			_manifest, () => {{prop.Prop.name}}.ToString(), 
+			v => {{prop.Prop.name}} = Enum.TryParse<{{prop.Prop.typeName}}>(v, true, out var p) ? p : {{prop.Prop.name}},
+			() => i18n.Get("config.{{prop.Prop.name}}.name"), () => i18n.Get("config.{{prop.Prop.name}}.desc"),
+			Enum.GetNames<{{prop.Prop.typeName}}>(), s => i18n.Get($"config.{{prop.Prop.simpleType}}.{s}"),
 			{%- else -%}
-			_manifest, () => {{prop.name}}, v => {{prop.name}} = v,
-			() => i18n.Get("config.{{prop.name}}.name"), () => i18n.Get("config.{{prop.name}}.desc"),
+			_manifest, () => {{prop.Prop.name}}, v => {{prop.Prop.name}} = v,
+			() => i18n.Get("config.{{prop.Prop.name}}.name"), () => i18n.Get("config.{{prop.Prop.name}}.desc"),
 			{%- endif %}
-			fieldId: "{{prop.name}}"
+			{%- if prop.HasRange %}
+			{%- if prop.Prop.type == "Int" %}
+			min: {{prop.Range.min}}, max: {{prop.Range.max}}, interval: {{prop.Range.step}},
+			{%- elsif prop.Prop.type == "Float" %}
+			min: {{prop.Range.min}}f, max: {{prop.Range.max}}f, interval: {{prop.Range.step}}f,
+			{%- endif %}
+			{%- endif %}
+			fieldId: "{{prop.Prop.name}}"
 		);
 		{%- endfor %}
 		{%- endfor %}

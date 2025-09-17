@@ -50,6 +50,23 @@ namespace StarModGen
 			};
 		}
 
+		public static bool TryGetNamedParam(this AttributeData data, string key, out TypedConstant val)
+		{
+			val = default;
+			var args = data.NamedArguments;
+
+			for (int i = 0; i < args.Length; i++)
+			{
+				if (args[i].Key == key)
+				{
+					val = args[i].Value;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		public static string ToVarname(this string asset)
 		{
 			int dot = asset.LastIndexOf('.');

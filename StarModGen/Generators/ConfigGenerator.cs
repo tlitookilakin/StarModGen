@@ -9,7 +9,6 @@ using System.Linq;
 
 namespace StarModGen.Generators;
 
-// TODO add ranges
 [Generator]
 public class ConfigGenerator : IIncrementalGenerator
 {
@@ -19,14 +18,16 @@ public class ConfigGenerator : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext ctx)
 	{
-		options.MemberAccessStrategy.Register<IGrouping<string, ConfigProperty>>();
+		options.MemberAccessStrategy.Register<IGrouping<string, RangedProperty>>();
 		options.MemberAccessStrategy.Register<ConfigType>();
 		options.MemberAccessStrategy.Register<ConfigProperty>();
+		options.MemberAccessStrategy.Register<RangedProperty>();
+		options.MemberAccessStrategy.Register<ConfigRange>();
 		options.MemberAccessStrategy.Register<TemplateData>();
 
 		options.ValueConverters.Add(static v => v is Enum e ? e.ToString() : null);
 		options.ValueConverters.Add(
-			static v => v is IGrouping<string?, ConfigProperty> g ? new StringGroupConverter<ConfigProperty>(g) : null
+			static v => v is IGrouping<string?, RangedProperty> g ? new StringGroupConverter<RangedProperty>(g) : null
 		);
 
 		var configs = ctx.SyntaxProvider.ForAttributeWithMetadataName<ConfigType>("StarModGen.Lib.ConfigAttribute",
@@ -40,7 +41,7 @@ public class ConfigGenerator : IIncrementalGenerator
 		);
 
 		var props = ctx.SyntaxProvider.ForAttributeWithMetadataName<ConfigProperty>("StarModGen.Lib.ConfigValueAttribute",
-			static (node, cancel) => node is PropertyDeclarationSyntax,
+			static (node, cancel) => node is PropertyDeclarationSyntax p && p.Modifiers.Any(SyntaxKind.PublicKeyword),
 			static (ctx, cancel) => new(
 				ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)!,
 				ctx.TargetSymbol.Name,
@@ -52,7 +53,22 @@ public class ConfigGenerator : IIncrementalGenerator
 			)
 		);
 
-		var grouped = configs.Combine(props.Collect());
+		var ranges = ctx.SyntaxProvider.ForAttributeWithMetadataName<ConfigRange>("StarModGen.Lib.ConfigRangeAttribute",
+			static (node, cancel) => node is PropertyDeclarationSyntax,
+			static (ctx, cancel) => new(
+				ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)!,
+				ctx.TargetSymbol.Name,
+				((IPropertySymbol)ctx.TargetSymbol).Type.Name is "Single",
+				((IPropertySymbol)ctx.TargetSymbol).IsPartialDefinition,
+				ctx.Attributes[0].TryGetNamedParam("Min", out var v) ? v.ToCSharpString() : "null",
+				ctx.Attributes[0].TryGetNamedParam("Max", out v) ? v.ToCSharpString() : "null",
+				ctx.Attributes[0].TryGetNamedParam("Step", out v) ? v.ToCSharpString() : "null"
+			)
+		);
+
+		var grouped = configs
+			.Combine(props.Collect())
+			.Combine(ranges.Collect());
 
 		ctx.RegisterPostInitializationOutput(static ctx =>
 		{
@@ -66,7 +82,7 @@ public class ConfigGenerator : IIncrementalGenerator
 
 		ctx.RegisterImplementationSourceOutput(grouped, (ctx, g) => 
 		{
-			ctx.AddSource($"{g.Left.space}.{g.Left.type}", Generate(g.Left, g.Right));
+			ctx.AddSource($"{g.Left.Left.space}.{g.Left.Left.type}", Generate(g.Left.Left, g.Left.Right, g.Right));
 		});
 
 		if (!parser.TryParse(Utilities.GetTemplate("Config"), out Template, out string error))
@@ -90,27 +106,58 @@ public class ConfigGenerator : IIncrementalGenerator
 	private enum ConfigValueType { None, String, Int, Bool, Enum, Float, KeyBind, KeyBindList };
 	private record struct ConfigType(string space, string type, string fullName, bool titleOnly);
 	private record struct ConfigProperty(string owner, string name, ConfigValueType type, string defaultValue, string typeName, string simpleType, string? page);
-	
-	private class TemplateData(ConfigType type, IList<ConfigProperty> props, IList<IGrouping<string?, ConfigProperty>> pages)
+	private record struct ConfigRange(string owner, string name, bool isFloat, bool partial, string min, string max, string step);
+
+	private class TemplateData(ConfigType type, IList<RangedProperty> props, IList<IGrouping<string?, RangedProperty>> pages)
 	{
 		public ConfigType Type => type;
-		public IList<IGrouping<string?, ConfigProperty>> Pages => pages;
-		public IList<ConfigProperty> Props => props;
+		public IList<IGrouping<string?, RangedProperty>> Pages => pages;
+		public IList<RangedProperty> Props => props;
 	}
 
-	private string Generate(ConfigType cfg, IList<ConfigProperty> props)
+	private class RangedProperty(ConfigProperty prop)
 	{
-		List<ConfigProperty> LocalProps = [];
+		public ConfigProperty Prop => prop;
+		public bool HasRange => hasRange;
+		public ConfigRange Range
+		{
+			get => range;
+			set {
+				range = value;
+				hasRange = true;
+			}
+		}
+		private ConfigRange range;
+		private bool hasRange = false;
+	}
+
+	private string Generate(ConfigType cfg, IList<ConfigProperty> props, IList<ConfigRange> ranges)
+	{
+		List<RangedProperty> LocalProps = [];
+		Dictionary<string, int> RangedBox = [];
+
 		foreach (var prop in props)
 		{
 			if (prop.type is ConfigValueType.None)
 				continue;
 
 			if (prop.owner == cfg.fullName)
-				LocalProps.Add(prop);
+			{
+				LocalProps.Add(new(prop));
+				RangedBox[prop.name] = LocalProps.Count - 1;
+			}
 		}
 
-		var model = new TemplateData(cfg, LocalProps, [.. LocalProps.GroupBy(static l => l.page)]);
+		foreach (var range in ranges)
+		{
+			if (range.owner != cfg.fullName)
+				continue;
+
+			if (RangedBox.TryGetValue(range.name, out int i))
+				LocalProps[i].Range = range;
+		}
+
+		var model = new TemplateData(cfg, LocalProps, [.. LocalProps.GroupBy(static l => l.Prop.page)]);
 		return Template.Render(new(model, options));
 	}
 
