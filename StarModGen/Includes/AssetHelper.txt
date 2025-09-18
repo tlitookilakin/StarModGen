@@ -22,7 +22,7 @@ public static partial class AssetHelper
 		initialized = true;
 
 		Helper = helper;
-		LangAsset = helper.GameContent.ParseAssetName("Mods/" + MOD_ID + "/Strings");
+		LangAsset = helper.GameContent.ParseAssetName(LANG_PATH);
 		SetupDirects();
 
 		if (DUMP_LANG)

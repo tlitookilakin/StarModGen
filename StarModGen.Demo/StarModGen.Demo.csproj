@@ -14,7 +14,7 @@
 	<ItemGroup>
 		<PackageReference Include="Leclair.Stardew.ModManifestBuilder" Version="2.4.1" />
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
-		<PackageReference Include="tlitookilakin.StarModGen" Version="0.1.1" Condition="'$(Configuration)'=='Release'">
+		<PackageReference Include="tlitookilakin.StarModGen" Version="0.1.2" Condition="'$(Configuration)'=='Release'">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
