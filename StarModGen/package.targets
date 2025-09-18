@@ -2,5 +2,8 @@
 	<ItemGroup>
 		<CompilerVisibleProperty Include="UniqueId"/>
 		<CompilerVisibleProperty Include="EnableHarmony"/>
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GameAssetMerge"/>
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GameAssetLoad"/>
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GameAssetPriority"/>
 	</ItemGroup>
 </Project>

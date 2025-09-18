@@ -1,0 +1,59 @@
+﻿using System;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+
+namespace StarModGen.Utils;
+
+#nullable enable
+public static partial class AssetHelper 
+{
+	private const bool DUMP_LANG = {{DumpLang}};
+
+	{%- for asset in Assets %}
+	private static IAssetName _nameof_{{asset | VarName}} = null!;
+	{%- for item in asset %}
+	{%- if item.Merge %}
+	private static Action<IAssetData> _include_{{item.Source | VarName}} = BindInclude("{{item.Source}}");
+	{%- endif %}
+	{%- endfor %}
+	{%- endfor %}
+
+	private static partial void SetupDirects()
+	{
+		{%- for asset in Assets %}
+		_nameof_{{asset | VarName}} = Helper.GameContent.ParseAssetName({{asset | MakeLocal}});
+		{%- endfor %}
+
+		Helper.Events.Content.AssetRequested += PerformDirects;
+	}
+
+	private static void PerformDirects(object? s, StardewModdingAPI.Events.AssetRequestedEventArgs e)
+	{
+		var name = e.NameWithoutLocale;
+
+		{%- for asset in Assets %}
+		{% unless forloop.first -%}else {% endunless -%}
+		if (name.Equals(_nameof_{{asset | VarName}}))
+		{
+			{%- for item in asset %}
+			{%- if item.Merge %}
+			e.Edit(_include_{{item.Source | VarName}}
+			{%- if item.Priority -%}
+			, {{item.Priority | format_string: "AssetEditPriority"}}
+			{%- endif -%}
+			);
+			{%- else %}
+			e.LoadFromModFile<{{item.LoadType}}>("{{item.Source}}"
+			{%- if itemPriority -%}
+			, {{item.Priority | format_string: "AssetLoadPriority"}}
+			{%- else -%}
+			, AssetLoadPriority.Medium
+			{%- endif -%}
+			);
+			{%- endif %}
+			{%- endfor %}
+		}
+		{%- endfor %}
+	}
+}
+#nullable restore

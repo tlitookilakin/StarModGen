@@ -13,8 +13,6 @@ namespace StarModGen.Demo
 		public partial Dictionary<string, ObjectData> CustomObjects { get; }
 
 		[AssetEntry]
-		[AssetInclude("Data/Objects", "assets/ObjectIncludes.json")]
-		[Asset("/MyImage", "assets/thing.png")]
 		public partial void Setup(IModHelper helper);
 
 		[AssetEdit("Data/Shops")]

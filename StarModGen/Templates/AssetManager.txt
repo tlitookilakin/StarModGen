@@ -7,10 +7,6 @@ partial class {{Entry.Type}}
 	{%- for asset in Assets %}
 	private global::StardewModdingAPI.IAssetName _nameof_{{asset.VarName}} = null!;
 	{%- endfor %}
-	{%- for include in IncludeSources %}
-	private readonly global::System.Action<global::StardewModdingAPI.IAssetData> _include_{{include[1]}}
-		= StarModGen.Utils.AssetHelper.BindInclude("{{include[0]}}");
-	{%- endfor %}
 	{%- for prop in LocalProps %}
 	private {{prop.PropType}}? _{{ prop.Prop }} = null;
 	{{prop.access}}partial {{prop.PropType}} {{prop.Prop}}
@@ -32,7 +28,7 @@ partial class {{Entry.Type}}
 		foreach (var name in e.NamesWithoutLocale) 
 		{
 			{%- for asset in Assets -%}
-			{%- if asset.Prop and asset.isProperty %}
+			{%- if asset.Prop %}
 			{% unless forloop.first -%}else {% endunless -%}
 			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
@@ -60,9 +56,6 @@ partial class {{Entry.Type}}
 			{%- elsif asset.Load -%}
 			e.LoadFrom({{asset.Load.Method}}, global::StardewModdingAPI.Events.AssetLoadPriority.Medium);
 			{%- endif -%}
-			{%- for include in asset.Includes -%}
-			e.Edit(_include_{{include.SourceVar}});
-			{%- endfor -%}
 			{%- for edit in asset.Edits -%}
 			e.Edit({{edit.Method}});
 			{%- endfor %}

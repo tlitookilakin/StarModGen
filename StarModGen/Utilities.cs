@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿using Fluid;
+using Fluid.Values;
+using Microsoft.CodeAnalysis;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace StarModGen
 {
@@ -67,6 +69,12 @@ namespace StarModGen
 			return false;
 		}
 
+		public static ValueTask<FluidValue> VarNameFilter(FluidValue i, FilterArguments args, TemplateContext ctx)
+			=> FluidValue.Create(i.ToStringValue()?.ToVarname(), ctx.Options);
+
+		public static ValueTask<FluidValue> MakeLocalFilter(FluidValue i, FilterArguments args, TemplateContext ctx)
+			=> FluidValue.Create(i.ToStringValue()?.MakeLocal(), ctx.Options);
+
 		public static string ToVarname(this string asset)
 		{
 			int dot = asset.LastIndexOf('.');
@@ -83,13 +91,20 @@ namespace StarModGen
 			return $"\"Mods/\" + MOD_ID + \"{name}\"";
 		}
 
+		public static string WithoutPrefix(this string s, string? prefix)
+		{
+			if (prefix is null || !s.StartsWith(prefix))
+				return s;
+			return s[prefix.Length..];
+		}
+
 		public static string GuessTypeByName(this string file)
 			=> Path.GetExtension(file).ToLowerInvariant() switch
 				{
 					".png" => "global::Microsoft.Xna.Framework.Graphics.Texture2D",
 					".tmx" or ".tbin" => "global::xTile.Map",
 					".json" => "object",
-					_ => ""
+					_ => "object"
 				};
 	}
 }

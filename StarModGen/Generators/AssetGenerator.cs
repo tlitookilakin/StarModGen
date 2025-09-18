@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using StarModGen.Helpers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,9 +14,10 @@ namespace StarModGen.Generators
 	[Generator]
 	public class AssetGenerator : IIncrementalGenerator
 	{
-		private IFluidTemplate? Template;
-		private readonly TemplateOptions options = new();
-		private readonly FluidParser parser = new();
+		private static IFluidTemplate? Template;
+		private static IFluidTemplate? HelperTemplate;
+		private static readonly TemplateOptions options = new();
+		private static readonly FluidParser parser = new();
 
 		public void Initialize(IncrementalGeneratorInitializationContext ctx)
 		{
@@ -25,9 +27,13 @@ namespace StarModGen.Generators
 			options.MemberAccessStrategy.Register<AssetGroup>();
 			options.MemberAccessStrategy.Register<AssetEdit>();
 			options.MemberAccessStrategy.Register<AssetLoad>();
-			options.MemberAccessStrategy.Register<AssetInclude>();
-			options.MemberAccessStrategy.Register<KeyValuePair<string, string>>();
-			options.MemberAccessStrategy.Register(typeof(IList<>));
+			options.MemberAccessStrategy.Register<DirectAsset>();
+			options.Filters.AddFilter("VarName", Utilities.VarNameFilter);
+			options.Filters.AddFilter("MakeLocal", Utilities.MakeLocalFilter);
+
+			options.ValueConverters.Add(
+				static v => v is IGrouping<string, DirectAsset> g ? new StringGroupConverter<DirectAsset>(g) : null
+			);
 
 			var assetEntries = ctx.SyntaxProvider.ForAttributeWithMetadataName<AssetEntryMethod>("StarModGen.Lib.AssetEntryAttribute",
 				static (node, cancel) => node is MethodDeclarationSyntax m && m.Modifiers.Any(SyntaxKind.PartialKeyword),
@@ -82,54 +88,58 @@ namespace StarModGen.Generators
 				}
 			);
 
-			var assetIncludes = ctx.SyntaxProvider.ForAttributeWithMetadataName<AssetInclude>("StarModGen.Lib.AssetIncludeAttribute",
-				static (node, cancel) => node is MethodDeclarationSyntax m,
-				static (ctx, cancel) =>
-				{
-					var args = ctx.Attributes[0].ConstructorArguments;
-					return new(
-						ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-						((string)args[0].Value!),
-						((string)args[1].Value!),
-						((string)args[1].Value!).ToVarname()
-					);
-				}
-			);
+			var DirectEdits = ctx.AdditionalTextsProvider
+				.Combine(ctx.AnalyzerConfigOptionsProvider)
+				.Select(static (p, c) => {
+					var opts = p.Right.GetOptions(p.Left);
+					p.Right.GlobalOptions.TryGetValue("build_property.projectdir", out var root);
 
-			var anonLoads = ctx.SyntaxProvider.ForAttributeWithMetadataName<AssetProperty>("StarModGen.Lib.AssetAttribute",
-				static (node, cancel) => node is MethodDeclarationSyntax m && m.Modifiers.Any(SyntaxKind.PartialKeyword),
-				static (ctx, cancel) => {
-					var args = ctx.Attributes[0].ConstructorArguments;
-					return new(
-						ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-						ctx.TargetSymbol.Name,
-						args.Length > 1 ? ((string)args[1].Value!).GuessTypeByName() : "",
-						((string)args[0].Value!),
-						args.Length > 1 ? (string?)args[1].Value : null,
-						ctx.TargetSymbol.DeclaredAccessibility.ToSyntax(),
-						((string)args[0].Value!).MakeLocal()
+					bool isMerge = false;
+					string? target = null;
+
+					if (opts.TryGetValue("build_metadata.AdditionalFiles.GameAssetLoad", out var load) && load.Length != 0)
+					{
+						isMerge = false;
+						target = load;
+					}
+					if (opts.TryGetValue("build_metadata.AdditionalFiles.GameAssetMerge", out var merge) && merge.Length != 0)
+					{
+						isMerge = true;
+						target = merge;
+					}
+
+					return new DirectAsset(
+						target, p.Left.Path.WithoutPrefix(root).Replace('\\', '/'), isMerge,
+						opts.TryGetValue("GameAssetPriority", out var priority) && priority.Length != 0 ? ProcessPriority(priority) : null,
+						p.Left.Path.GuessTypeByName()
 					);
-				}
-			);
+				})
+				.Where(static p => p.Target != null);
 
 			var grouped = assetEntries
 				.Combine(assetProps.Collect())
-				.Combine(assetIncludes.Collect())
 				.Combine(assetEdits.Collect())
-				.Combine(assetLoads.Collect())
-				.Combine(anonLoads.Collect());
+				.Combine(assetLoads.Collect());
 
 			ctx.RegisterPostInitializationOutput(static ctx => 
 			{
 				Utilities.AddIncludes(ctx.AddSource, "AssetHelper");
 			});
 
-			ctx.RegisterImplementationSourceOutput(grouped, (ctx, val) => 
+			ctx.RegisterImplementationSourceOutput(grouped, static (ctx, val) => 
 			{
-				Write(val.Left.Left.Left.Left.Left, val.Left.Left.Left.Left.Right, val.Left.Left.Left.Right, val.Left.Left.Right, val.Left.Right, val.Right, ctx);
+				Write(val.Left.Left.Left, val.Left.Left.Right, val.Left.Right, val.Right, ctx);
+			});
+
+			ctx.RegisterImplementationSourceOutput(DirectEdits.Collect(), static (ctx, edits) => 
+			{
+				WriteHelper(edits, ctx);
 			});
 
 			if(!parser.TryParse(Utilities.GetTemplate("AssetManager"), out Template, out string error))
+				throw new Exception(error);
+
+			if (!parser.TryParse(Utilities.GetTemplate("AssetHelper"), out HelperTemplate, out error))
 				throw new Exception(error);
 		}
 
@@ -137,11 +147,12 @@ namespace StarModGen.Generators
 		private record struct AssetEntryMethod(string? Space, string Type, string Method, bool IsNotify, string fullName, string access);
 		private record struct TemplateData(
 			AssetEntryMethod Entry, IReadOnlyList<AssetProperty> LocalProps, 
-			IEnumerable<AssetGroup> Assets, IEnumerable<KeyValuePair<string, string>> IncludeSources
+			IEnumerable<AssetGroup> Assets
 		);
-		private record struct AssetInclude(string Owner, string Target, string Source, string SourceVar);
 		private record struct AssetEdit(string Owner, string Method, string Target);
 		private record struct AssetLoad(string Owner, string Method, string Target);
+		private record struct DirectAsset(string? Target, string Source, bool Merge, string? Priority, string LoadType);
+		private record class HelperData(IReadOnlyList<IGrouping<string, DirectAsset>> Assets, bool DumpLang);
 
 		private class AssetGroup
 		{
@@ -149,9 +160,7 @@ namespace StarModGen.Generators
 			public AssetProperty? Prop;
 			public readonly IList<AssetEdit> Edits = [];
 			public AssetLoad? Load;
-			public readonly IList<AssetInclude> Includes = [];
 			public string VarName;
-			public bool isProperty;
 
 			private AssetGroup(string Target)
 			{
@@ -159,10 +168,9 @@ namespace StarModGen.Generators
 				this.VarName = Target.ToVarname();
 			}
 
-			public AssetGroup(AssetProperty Prop, bool isProperty) : this(Prop.Asset)
+			public AssetGroup(AssetProperty Prop) : this(Prop.Asset)
 			{
 				this.Prop = Prop;
-				this.isProperty = isProperty;
 			}
 
 			public AssetGroup(AssetLoad Load) : this(Load.Target)
@@ -175,18 +183,30 @@ namespace StarModGen.Generators
 				this.Edits = Edits;
 			}
 
-			public AssetGroup(string Target, IList<AssetInclude> Includes) : this(Target)
-			{
-				this.Includes = Includes;
-			}
-
 			public bool HasAnyHandlers
-				=> Prop?.Local is not null || Load is not null || Includes.Count > 0 || Edits.Count > 0;
+				=> Prop?.Local is not null || Load is not null || Edits.Count > 0;
 		}
 
-		private void Write(
-			AssetEntryMethod entry, IReadOnlyList<AssetProperty> props, IReadOnlyList<AssetInclude> includes, 
-			IReadOnlyList<AssetEdit> edits, IReadOnlyList<AssetLoad> loads, IReadOnlyList<AssetProperty> anons, SourceProductionContext ctx
+		private static string ProcessPriority(string original)
+		{
+			if (int.TryParse(original, out int n))
+				return $"({{0}}){n}";
+			return $"{{0}}.{original}";
+		}
+
+		private static void WriteHelper(IReadOnlyList<DirectAsset> directs, SourceProductionContext ctx)
+		{
+			if (HelperTemplate is null)
+				return;
+
+			var grouped = directs.GroupBy(static l => l.Target).ToList();
+			var data = new HelperData(grouped!, true);
+			ctx.AddSource("AssetHelper.impl", HelperTemplate.Render(new(data, options)));
+		}
+
+		private static void Write(
+			AssetEntryMethod entry, IReadOnlyList<AssetProperty> props, IReadOnlyList<AssetEdit> edits, 
+			IReadOnlyList<AssetLoad> loads,  SourceProductionContext ctx
 		)
 		{
 			if (Template is null)
@@ -195,7 +215,6 @@ namespace StarModGen.Generators
 			var file = $"{entry.Space}.{entry.Type}.impl";
 			string fullName = entry.fullName;
 			List<AssetProperty> LocalProps = [];
-			Dictionary<string, string> IncludeSources = [];
 			Dictionary<string, AssetGroup> Groups = [];
 
 			foreach (var p in props)
@@ -207,11 +226,10 @@ namespace StarModGen.Generators
 				if (Groups.TryGetValue(p.Asset, out var g))
 				{
 					g.Prop = p;
-					g.isProperty = true;
 					continue;
 				}
 
-				Groups.Add(p.Asset, new(p, true));
+				Groups.Add(p.Asset, new(p));
 			}
 
 			foreach (var e in edits)
@@ -236,40 +254,7 @@ namespace StarModGen.Generators
 					g.Load = l;
 			}
 
-			foreach (var i in includes)
-			{
-				if (i.Owner != fullName)
-					continue;
-
-				IncludeSources[i.Source] = i.SourceVar;
-				if (!Groups.TryGetValue(i.Target, out var g))
-					Groups.Add(i.Target, new(i.Target, [i]));
-				else
-					g.Includes.Add(i);
-			}
-
-			foreach (var a in anons)
-			{
-				if (a.Type != fullName)
-					continue;
-
-				if (a.PropType.Length is 0)
-					continue;
-
-				if (Groups.TryGetValue(a.Asset, out var g))
-				{
-					if (g.Prop is AssetProperty p && g.isProperty)
-						LocalProps.Remove(p);
-
-					g.Prop = a;
-					g.isProperty = false;
-					continue;
-				}
-
-				Groups.Add(a.Asset, new(a, false));
-			}
-
-			var data = new TemplateData(entry, props, Groups.Values, IncludeSources);
+			var data = new TemplateData(entry, props, Groups.Values);
 			ctx.AddSource(file, Template.Render(new(data, options)));
 		}
 	}

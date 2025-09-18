@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace StarModGen.Utils;
 
-public static class AssetHelper
+public static partial class AssetHelper
 {
 	private static readonly Dictionary<Type, Action<object, string>> ListEditCache = [];
 	private static readonly Dictionary<Type, Action<object, string>> DictEditCache = [];
@@ -23,19 +23,24 @@ public static class AssetHelper
 
 		Helper = helper;
 		LangAsset = helper.GameContent.ParseAssetName("Mods/" + MOD_ID + "/Strings");
-		helper.Events.Content.AssetRequested += AssetRequested;
+		SetupDirects();
+
+		if (DUMP_LANG)
+			helper.Events.Content.AssetRequested += AssetRequested;
 	}
+
+	private static partial void SetupDirects();
 
 	private static void AssetRequested(object? sender, StardewModdingAPI.Events.AssetRequestedEventArgs e)
 	{
 		if (!e.NameWithoutLocale.Equals(LangAsset))
 			return;
 
-		e.LoadFrom(() => new Dictionary<string, string>(
+		e.LoadFrom(static () => new Dictionary<string, string>(
 			Helper.Translation.GetTranslations().Select(
 				static t => new KeyValuePair<string, string>(t.Key, t)
 			)
-		), StardewModdingAPI.Events.AssetLoadPriority.High);
+		), StardewModdingAPI.Events.AssetLoadPriority.Low);
 	}
 
 	private static Action<object, string> GetEditor(Type type, Dictionary<Type, Action<object, string>> cache, MethodInfo basem)
