@@ -47,6 +47,12 @@ partial class {{Type.type}}
 		Reset?.Invoke(this);
 	}
 
+	///<summary>
+	///Creates or reads a new config instance and registers it with GMCM if possible. <br/>
+	///Use this instead of creating or reading a config directly.
+	///</summary>
+	///<param name="helper">Your mod's ModHelper</param>
+	///<param name="manifest">Your mod's Manifest</param>
 	internal static partial {{Type.type}} Create(StardewModdingAPI.IModHelper helper, StardewModdingAPI.IManifest manifest)
 	{
 		var cfg = helper.ReadConfig<{{Type.type}}>();

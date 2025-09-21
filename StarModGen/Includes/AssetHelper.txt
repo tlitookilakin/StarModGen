@@ -3,6 +3,7 @@ using System.Reflection;
 
 namespace StarModGen.Utils;
 
+///<summary>Provides various asset-editing utilities and handles autoloads/edits</summary>
 public static partial class AssetHelper
 {
 	private static readonly Dictionary<Type, Action<object, string>> ListEditCache = [];
@@ -14,6 +15,11 @@ public static partial class AssetHelper
 	private static IModHelper Helper = null!;
 	private static IAssetName LangAsset = null!;
 
+	///<summary>
+	///Initializes the asset helper. Must be called at least once to make asset things work, may be safely called multiple times. <br/>
+	///Automatically called by asset handler classes, if any exist.
+	///</summary>
+	///<param name="helper">Your mod's ModHelper</param>
 	public static void Init(IModHelper helper)
 	{
 		if (initialized)

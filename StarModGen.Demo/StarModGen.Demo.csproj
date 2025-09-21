@@ -14,7 +14,7 @@
 	<ItemGroup>
 		<PackageReference Include="Leclair.Stardew.ModManifestBuilder" Version="2.4.1" />
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
-		<PackageReference Include="tlitookilakin.StarModGen" Version="0.1.2" Condition="'$(Configuration)'=='Release'">
+		<PackageReference Include="tlitookilakin.StarModGen" Version="0.2.1" Condition="'$(Configuration)'=='Release'">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
@@ -31,7 +31,7 @@
 		<ProjectReference Include="..\StarModGen\StarModGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=netstandard2.0" />
 	</ItemGroup>
 
-	<Import Project="..\StarModGen\package.targets" Condition="'$(Configuration)'=='Debug'"/>
+	<Import Project="..\StarModGen\package.targets" Condition="'$(Configuration)'=='Debug'" />
 
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>

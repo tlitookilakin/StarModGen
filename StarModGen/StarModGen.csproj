@@ -9,13 +9,19 @@
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageTags>smapi;stardew;valley</PackageTags>
+		<PackageTags>smapi;stardew;valley;sourcegen</PackageTags>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<PackageId>tlitookilakin.StarModGen</PackageId>
 		<Authors>tlitookilakin</Authors>
-		<Version>0.1.2</Version>
+		<Version>0.2.1</Version>
+		<Description>Generates code to handle common tasks with stardew modding.</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/tlitookilakin/StarModGen</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/tlitookilakin/StarModGen.git</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -34,6 +40,8 @@
 		<None Include="..\StarModGen.Lib\bin\Release\netstandard2.0\StarModGen.Lib.dll" PackagePath="lib/netstandard2.0/" Pack="true" Visible="false"/>
 		<None Include="package.targets" PackagePath="build\$(PackageId).targets" Pack="true"/>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="../README.md" Pack="true" PackagePath="/"/>
+		<None Include="icon.png" Pack="true" PackagePath="/"/>
 	</ItemGroup>
 
 	<ItemGroup>

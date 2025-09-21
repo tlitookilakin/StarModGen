@@ -4,6 +4,9 @@ using System.Reflection;
 
 namespace StarModGen.Utils;
 
+///<summary>A utility to more conveniently register harmony patches.</summary>
+///<param name="harmony">The harmony instance to use</param>
+///<param name="monitor">Your mod's Monitor, for logging patch errors.</param>
 public class HarmonyHelper(Harmony harmony, IMonitor monitor)
 {
 	private static readonly string[] patchTypeNames = ["prefix", "postfix", "transpiler", "finalizer"];
@@ -12,33 +15,46 @@ public class HarmonyHelper(Harmony harmony, IMonitor monitor)
 	private MethodInfo[] targets = [];
 	private Type? targetType;
 
+	///<summary>The instance of harmony being used by the helper.</summary>
+	public Harmony Harmony => harmony;
+
+	///<summary>Begins patching a method of the given name on the given type.</summary>
 	public HarmonyHelper With<T>(string name)
 		=> WithImpl(name, false, typeof(T));
 
+	///<summary>Beings patching a method of the given name on the current type.</summary>
 	public HarmonyHelper With(string name)
 		=> WithImpl(name, false);
 
+	///<summary>Begins patching a property of the given name on the given type.</summary>
 	public HarmonyHelper WithProperty<T>(string name, bool getter)
 		=> WithPropertyImpl(name, false, getter, typeof(T));
-
+		
+	///<summary>Beings patching a property of the given name on the current type.</summary>
 	public HarmonyHelper WithProperty(string name, bool getter)
 		=> WithPropertyImpl(name, false, getter);
-
+		
+	///<summary>Begins patching all methods with the given name on the given type.</summary>
 	public HarmonyHelper WithAll<T>(string name, Func<MethodInfo, bool>? predicate = null)
 		=> WithImpl(name, true, typeof(T), predicate);
-
+		
+	///<summary>Begins patching all methods with the given name on the current type.</summary>
 	public HarmonyHelper WithAll(string name, Func<MethodInfo, bool>? predicate = null)
 		=> WithImpl(name, true, null, predicate);
 
+	///<summary>Apply a method as a prefix.</summary>
 	public HarmonyHelper Prefix(Delegate use)
 		=> PatchImpl(new(use.Method), 0);
 
+	///<summary>Apply a method as a postfix.</summary>
 	public HarmonyHelper Postfix(Delegate use)
 		=> PatchImpl(new(use.Method), 1);
 
+	///<summary>Apply a method as a transpiler</summary>
 	public HarmonyHelper Transpiler(Delegate use)
 		=> PatchImpl(new(use.Method), 2);
 
+	///<summary>Apply a method as a finalizer</summary>
 	public HarmonyHelper Finalizer(Delegate use)
 		=> PatchImpl(new(use.Method), 3);
 

@@ -1,7 +1,10 @@
 ﻿namespace StardModGen.Utils;
 
+///<summary>Automatically hooks up registered events and event handlers.</summary>
 internal static partial class EventBus 
 {
+	///<summary>Attaches all handlers to their events. Should be called in Entry.</summary>
+	///<param name="Helper">Your mod's ModHelper</param>
 	public static partial void Register(StardewModdingAPI.IModHelper Helper)
 	{
 		{%- for Group in Handlers -%}
