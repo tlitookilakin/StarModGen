@@ -4,7 +4,7 @@ StarModGen is a source generator library designed to automate some common, tedio
 ## Installing
 To add StarModGen to your project, simply add the following line to your .csproj inside an `ItemGroup`:
 ```xml
-<PackageReference Include="tlitookilakin.StarModGen" Version="0.1.2" ExcludeAssets="runtime"/>
+<PackageReference Include="tlitookilakin.StarModGen" Version="*" ExcludeAssets="runtime"/>
 ```
 And make sure to specify your mod's `UniqueId` in a `PropertyGroup` as well.
 Though it's not required, StarModGen also works well with the [ModManifestBuilder Package](https://www.nuget.org/packages/Leclair.Stardew.ModManifestBuilder/).
