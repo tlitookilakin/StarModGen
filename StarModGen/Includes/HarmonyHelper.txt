@@ -20,7 +20,7 @@ public class HarmonyHelper(Harmony harmony, IMonitor monitor)
 	
 	///<summary>Begins patching a method of the given name on the given type.</summary>
 	public HarmonyHelper With(Type t, string name)
-		=> WithImpl(name, false, t)l
+		=> WithImpl(name, false, t);
 
 	///<summary>Begins patching a method of the given name on the given type.</summary>
 	public HarmonyHelper With<T>(string name)
