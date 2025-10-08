@@ -1,19 +1,24 @@
-﻿{%- if Entry.Space -%}
+﻿using System.ComponentModel;
+using StardewValleyModdingAPI;
+using StardewValleyModdingAPI.Events;
+using StardewValley;
+
+{%- if Entry.Space -%}
 namespace {{Entry.Space}};
 {% endif -%}
 
-partial class {{Entry.Type}}
+{% if Entry.isStatic -%} static {% endif -%} partial class {{Entry.Type}}
 {
 	{%- for asset in Assets %}
-	private global::StardewModdingAPI.IAssetName _nameof_{{asset.VarName}} = null!;
+	private IAssetName _nameof_{{asset.VarName}} = null!;
 	{%- endfor %}
 	{%- for prop in LocalProps %}
-	private {{prop.PropType}}? _{{ prop.Prop }} = null;
-	{{prop.access}}partial {{prop.PropType}} {{prop.Prop}}
-		=> _{{prop.Prop}} ??= global::StardewValley.Game1.content.Load<{{prop.PropType}}>({{prop.RawAsset}});
+	private {%- if Entry.isStatic %} static {% endif %} {{prop.PropType}}? _{{ prop.Prop }} = null;
+	{{prop.access}} {%- if Entry.isStatic %} static {% endif %} partial {{prop.PropType}} {{prop.Prop}}
+		=> _{{prop.Prop}} ??= Game1.content.Load<{{prop.PropType}}>({{prop.RawAsset}});
 	{% endfor %}
 
-	{{Entry.access}}partial void {{Entry.Method}}(StardewModdingAPI.IModHelper helper)
+	{{Entry.access}} {% if Entry.isStatic -%} static {% endif -%} partial void {{Entry.Method}}(IModHelper helper)
 	{
 		StarModGen.Utils.AssetHelper.Init(helper);
 		helper.Events.Content.AssetsInvalidated += _AssetsInvalidatedImpl;
@@ -23,7 +28,8 @@ partial class {{Entry.Type}}
 		{%- endfor %}
 	}
 
-	private void _AssetsInvalidatedImpl(object? sender, StardewModdingAPI.Events.AssetsInvalidatedEventArgs e)
+	[EditorBrowsable(EditorBrowsableState.Never)]
+	private {% if Entry.isStatic -%} static {% endif -%} void _AssetsInvalidatedImpl(object? sender, Events.AssetsInvalidatedEventArgs e)
 	{
 		foreach (var name in e.NamesWithoutLocale) 
 		{
@@ -33,7 +39,7 @@ partial class {{Entry.Type}}
 			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
 				_{{asset.Prop.Prop}} = null;
-				{%- if Entry.IsNotify %}
+				{%- if Entry.IsNotify and not Entry.isStatic %}
 				PropertyChanged?.Invoke(this, new(nameof({{asset.Prop.Prop}})));
 				{%- endif %}
 			}
@@ -41,8 +47,9 @@ partial class {{Entry.Type}}
 			{%- endfor %}
 		}
 	}
-
-	private void _AssetRequestedImpl(object? sender, StardewModdingAPI.Events.AssetRequestedEventArgs e)
+	
+	[EditorBrowsable(EditorBrowsableState.Never)]
+	private {% if Entry.isStatic -%} static {% endif -%} void _AssetRequestedImpl(object? sender, AssetRequestedEventArgs e)
 	{
 		var name = e.NameWithoutLocale;
 
@@ -52,9 +59,9 @@ partial class {{Entry.Type}}
 		if (name.Equals(_nameof_{{asset.VarName}}))
 		{
 			{% if asset.Prop.Local -%}
-			e.LoadFromModFile<{{asset.Prop.PropType}}>("{{asset.Prop.Local}}", StardewModdingAPI.Events.AssetLoadPriority.Medium);
+			e.LoadFromModFile<{{asset.Prop.PropType}}>("{{asset.Prop.Local}}", AssetLoadPriority.Medium);
 			{%- elsif asset.Load -%}
-			e.LoadFrom({{asset.Load.Method}}, global::StardewModdingAPI.Events.AssetLoadPriority.Medium);
+			e.LoadFrom({{asset.Load.Method}}, AssetLoadPriority.Medium);
 			{%- endif -%}
 			{%- for edit in asset.Edits -%}
 			e.Edit({{edit.Method}});

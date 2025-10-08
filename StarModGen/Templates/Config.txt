@@ -2,7 +2,9 @@
 
 partial class {{Type.type}}
 {
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private StardewModdingAPI.IModHelper _helper = null!;
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private StardewModdingAPI.IManifest _manifest = null!;
 
 	{%- for prop in Props -%}
@@ -22,6 +24,7 @@ partial class {{Type.type}}
 		{%- if prop.Range.Max != "null" -%} ) {%- endif -%}
 		;
 	}
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private {{prop.Prop.typeName}} _{{prop.Prop.name}};
 	{%- endif -%}
 	{%- endfor %}
@@ -33,6 +36,7 @@ partial class {{Type.type}}
 	}
 #pragma warning restore CS8618
 
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private void _SetDefaults()
 	{
 		{%- for prop in Props %}
@@ -41,6 +45,7 @@ partial class {{Type.type}}
 		Reset?.Invoke(this);
 	}
 
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private void _Reset()
 	{
 		_SetDefaults();
@@ -65,11 +70,13 @@ partial class {{Type.type}}
 		return cfg;
 	}
 
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private void _Apply()
 	{
 		Applied?.Invoke(this);
 	}
 
+	[EditorBrowsable(EditorBrowsableState.Never)]
 	private void _Register(object? s, StardewModdingAPI.Events.GameLaunchedEventArgs ev)
 	{
 		var gmcm = _helper.ModRegistry.GetApi<StarModGen.Utils.IGMCMApi>("spacechase0.GenericModConfigMenu")!;
@@ -83,7 +90,7 @@ partial class {{Type.type}}
 		{% if page -%}
 			gmcm.AddPage(_manifest, "{{page}}", () => i18n.Get("config.page.{{page}}.name"));
 		{%- else -%}
-			gmcm.AddPage(_manifest, null);
+			gmcm.AddPage(_manifest, "");
 		{%- endif -%}
 		{%- for prop in page %}
 		{% case prop.Prop.type %}
@@ -114,7 +121,7 @@ partial class {{Type.type}}
 		{%- endfor %}
 		{%- endfor %}
 
-		gmcm.AddPage(_manifest, null);
+		gmcm.AddPage(_manifest, "");
 		{%- for page in Pages -%}
 		{%- if page %}
 		gmcm.AddPageLink(_manifest, "{{page}}", () => i18n.Get("config.page.{{page.Key}}.name"), () => i18n.Get("config.page.{{page}}.desc"));

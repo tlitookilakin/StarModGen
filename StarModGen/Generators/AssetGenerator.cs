@@ -42,7 +42,8 @@ namespace StarModGen.Generators
 					ctx.TargetSymbol.ContainingType.Name, ctx.TargetSymbol.Name,
 					ctx.TargetSymbol.ContainingType.AllInterfaces.Any(static i => i.Name == nameof(INotifyPropertyChanged)),
 					ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-					ctx.TargetSymbol.DeclaredAccessibility.ToSyntax()
+					ctx.TargetSymbol.DeclaredAccessibility.ToSyntax(),
+					ctx.TargetSymbol.ContainingType.IsStatic
 				)
 			);
 
@@ -144,7 +145,7 @@ namespace StarModGen.Generators
 		}
 
 		private record struct AssetProperty(string Type, string Prop, string PropType, string Asset, string? Local, string access, string RawAsset);
-		private record struct AssetEntryMethod(string? Space, string Type, string Method, bool IsNotify, string fullName, string access);
+		private record struct AssetEntryMethod(string? Space, string Type, string Method, bool IsNotify, string fullName, string access, bool isStatic);
 		private record struct TemplateData(
 			AssetEntryMethod Entry, IReadOnlyList<AssetProperty> LocalProps, 
 			IEnumerable<AssetGroup> Assets
