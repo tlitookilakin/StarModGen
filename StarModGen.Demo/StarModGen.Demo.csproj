@@ -31,12 +31,12 @@
 		<ProjectReference Include="..\StarModGen\StarModGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=netstandard2.0" />
 	</ItemGroup>
 
-	<Import Project="..\StarModGen\package.targets" Condition="'$(Configuration)'=='Debug'" />
-
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>GeneratedSources</CompilerGeneratedFilesOutputPath>
 	</PropertyGroup>
+
+	<Import Project="..\StarModGen\package.targets" Condition="'$(Configuration)'=='Debug'" />
 
 	<ItemGroup>
 		<Compile Remove="GeneratedSources/**/*.cs" />

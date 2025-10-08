@@ -1,9 +1,8 @@
-﻿using System.ComponentModel;
-using StardewValleyModdingAPI;
-using StardewValleyModdingAPI.Events;
+﻿using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 
-{%- if Entry.Space -%}
+{% if Entry.Space -%}
 namespace {{Entry.Space}};
 {% endif -%}
 
@@ -28,8 +27,7 @@ namespace {{Entry.Space}};
 		{%- endfor %}
 	}
 
-	[EditorBrowsable(EditorBrowsableState.Never)]
-	private {% if Entry.isStatic -%} static {% endif -%} void _AssetsInvalidatedImpl(object? sender, Events.AssetsInvalidatedEventArgs e)
+	private {% if Entry.isStatic -%} static {% endif -%} void _AssetsInvalidatedImpl(object? sender, AssetsInvalidatedEventArgs e)
 	{
 		foreach (var name in e.NamesWithoutLocale) 
 		{
@@ -39,16 +37,15 @@ namespace {{Entry.Space}};
 			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
 				_{{asset.Prop.Prop}} = null;
-				{%- if Entry.IsNotify and not Entry.isStatic %}
+				{%- if Entry.IsNotify %}{% unless Entry.IsStatic %}
 				PropertyChanged?.Invoke(this, new(nameof({{asset.Prop.Prop}})));
-				{%- endif %}
+				{%- endunless %}{%- endif %}
 			}
 			{%- endif %}
 			{%- endfor %}
 		}
 	}
 	
-	[EditorBrowsable(EditorBrowsableState.Never)]
 	private {% if Entry.isStatic -%} static {% endif -%} void _AssetRequestedImpl(object? sender, AssetRequestedEventArgs e)
 	{
 		var name = e.NameWithoutLocale;
