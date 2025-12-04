@@ -16,6 +16,7 @@ public class ConfigGenerator : IIncrementalGenerator
 	private readonly TemplateOptions options = new();
 	private readonly FluidParser parser = new();
 
+	// TODO add keybind conversion
 	public void Initialize(IncrementalGeneratorInitializationContext ctx)
 	{
 		options.MemberAccessStrategy.Register<IGrouping<string, RangedProperty>>();
@@ -46,7 +47,7 @@ public class ConfigGenerator : IIncrementalGenerator
 				ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)!,
 				ctx.TargetSymbol.Name,
 				GetType(((IPropertySymbol)ctx.TargetSymbol).Type),
-				ctx.Attributes[0].ConstructorArguments[0].ToCSharpString(),
+				ctx.Attributes[0].ConstructorArguments[0].AsDefaultValue((IPropertySymbol)ctx.TargetSymbol),
 				((IPropertySymbol)ctx.TargetSymbol).Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 				((IPropertySymbol)ctx.TargetSymbol).Type.Name,
 				ctx.Attributes[0].ConstructorArguments.Length > 1 ? ctx.Attributes[0].ConstructorArguments[1].Value?.ToString() : null
@@ -140,6 +141,8 @@ public class ConfigGenerator : IIncrementalGenerator
 		{
 			if (prop.type is ConfigValueType.None)
 				continue;
+
+			
 
 			if (prop.owner == cfg.fullName)
 			{

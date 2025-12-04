@@ -31,9 +31,10 @@ namespace {{Entry.Space}};
 	{
 		foreach (var name in e.NamesWithoutLocale) 
 		{
+			{% assign first = true -%}
 			{%- for asset in Assets -%}
 			{%- if asset.Prop %}
-			{% unless forloop.first -%}else {% endunless -%}
+			{% unless first -%}else {% endunless -%}
 			if (name.Equals(_nameof_{{asset.VarName}})) 
 			{
 				_{{asset.Prop.Prop}} = null;
@@ -41,6 +42,7 @@ namespace {{Entry.Space}};
 				PropertyChanged?.Invoke(this, new(nameof({{asset.Prop.Prop}})));
 				{%- endunless %}{%- endif %}
 			}
+			{% assign first = false -%}
 			{%- endif %}
 			{%- endfor %}
 		}
@@ -50,9 +52,10 @@ namespace {{Entry.Space}};
 	{
 		var name = e.NameWithoutLocale;
 
-		{% for asset in Assets %}
+		{% assign first = true -%}
+		{%- for asset in Assets %}
 		{%- if asset.HasAnyHandlers -%}
-		{%- unless forloop.first -%}else {% endunless -%}
+		{%- unless first -%}else {% endunless -%}
 		if (name.Equals(_nameof_{{asset.VarName}}))
 		{
 			{% if asset.Prop.Local -%}
@@ -64,6 +67,7 @@ namespace {{Entry.Space}};
 			e.Edit({{edit.Method}});
 			{%- endfor %}
 		}
+		{% assign first = false -%}
 		{% endif -%}
 		{% endfor %}
 	}

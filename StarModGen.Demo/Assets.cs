@@ -16,13 +16,13 @@ namespace StarModGen.Demo
 		public partial void Setup(IModHelper helper);
 
 		[AssetEdit("Data/Shops")]
-		public void EditTest(IAssetData data)
+		private void EditTest(IAssetData data)
 		{
 			// do stuff
 		}
 
 		[AssetLoad("/MyData")]
-		public string LoadThing()
+		private string LoadThing()
 		{
 			return "derp";
 		}

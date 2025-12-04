@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace StarModGen.Generators
 {
+	// TODO handle string expression
 	// TODO generics???
 	[Generator]
 	public class AssetGenerator : IIncrementalGenerator
@@ -39,7 +40,8 @@ namespace StarModGen.Generators
 				static (node, cancel) => node is MethodDeclarationSyntax m && m.Modifiers.Any(SyntaxKind.PartialKeyword),
 				static (ctx, cancel) => new(
 					ctx.TargetSymbol.ContainingType.ContainingNamespace?.ToDisplayString(), 
-					ctx.TargetSymbol.ContainingType.Name, ctx.TargetSymbol.Name,
+					ctx.TargetSymbol.ContainingType.Name, 
+					ctx.TargetSymbol.Name,
 					ctx.TargetSymbol.ContainingType.AllInterfaces.Any(static i => i.Name == nameof(INotifyPropertyChanged)),
 					ctx.TargetSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 					ctx.TargetSymbol.DeclaredAccessibility.ToSyntax(),
@@ -58,7 +60,7 @@ namespace StarModGen.Generators
 						((string)args[0].Value!), 
 						args.Length > 1 ? (string?)args[1].Value : null,
 						ctx.TargetSymbol.DeclaredAccessibility.ToSyntax(),
-						((string)args[0].Value!).MakeLocal()
+						args[0].MakeLocal()
 					);
 				}
 			);
@@ -185,7 +187,7 @@ namespace StarModGen.Generators
 			}
 
 			public bool HasAnyHandlers
-				=> Prop?.Local is not null || Load is not null || Edits.Count > 0;
+				=> Prop?.Local is not null or "" || Load is not null || Edits.Count > 0;
 		}
 
 		private static string ProcessPriority(string original)
@@ -255,7 +257,7 @@ namespace StarModGen.Generators
 					g.Load = l;
 			}
 
-			var data = new TemplateData(entry, props, Groups.Values);
+			var data = new TemplateData(entry, LocalProps, Groups.Values);
 			ctx.AddSource(file, Template.Render(new(data, options)));
 		}
 	}

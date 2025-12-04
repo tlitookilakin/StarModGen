@@ -1,4 +1,6 @@
-﻿using StarModGen.Lib;
+﻿using StardewModdingAPI;
+using StardewModdingAPI.Utilities;
+using StarModGen.Lib;
 
 namespace StarModGen.Demo
 {
@@ -20,5 +22,11 @@ namespace StarModGen.Demo
 
 		[ConfigValue(Styles.Checkered)]
 		public Styles ThingStyle { get; set; }
+
+		[ConfigValue(SButton.F21)]
+		public KeybindList FunnyButton { get; set; }
+
+		[ConfigValue("Ctrl+R")]
+		public KeybindList OtherButton { get; set; }
 	}
 }

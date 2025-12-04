@@ -1,5 +1,7 @@
 ﻿using StardewModdingAPI;
 using System.Reflection;
+using System.Collections.Generic;
+using System;
 
 namespace StarModGen.Utils;
 
@@ -79,7 +81,7 @@ public static partial class AssetHelper
 			edit = GetEditor(type.GenericTypeArguments[0], ListEditCache, ListEditBase);
 
 		else if (baseType == typeof(Dictionary<,>) && type.GenericTypeArguments[0] == typeof(string))
-			edit = GetEditor(type.GenericTypeArguments[0], DictEditCache, DictEditBase);
+			edit = GetEditor(type.GenericTypeArguments[1], DictEditCache, DictEditBase);
 
 		else return;
 

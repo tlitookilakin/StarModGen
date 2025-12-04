@@ -3,6 +3,6 @@ namespace StarModGen.Demo;
 
 public static class Constants
 {
-	public const string MOD_ID = "{{ModId}}";
+	public const string MOD_ID = "{{id}}";
 	public const string LANG_PATH = "Mods/" + MOD_ID + "/Strings";
 }

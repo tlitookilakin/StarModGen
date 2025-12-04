@@ -1,6 +1,7 @@
 ﻿using Fluid;
 using Fluid.Values;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.IO;
 using System.Reflection;
@@ -85,10 +86,24 @@ namespace StarModGen
 
 		public static string MakeLocal(this string name)
 		{
-			if (name.Length is 0 || name[0] is not '/')
-				return $"\"{name}\"";
+			if (name.Length != 0)
+			{
+				return name[0] switch
+				{
+					'/' => $"\"Mods/\" + MOD_ID + \"{name}\"",
+					_ => $"\"{name}\""
+				};
+			}
 
-			return $"\"Mods/\" + MOD_ID + \"{name}\"";
+			return $"\"{name}\"";
+		}
+
+		public static string MakeLocal(this TypedConstant value)
+		{
+			if (value.Value is string s)
+				return s.MakeLocal();
+			else
+				return value.ToCSharpString();
 		}
 
 		public static string WithoutPrefix(this string s, string? prefix)
@@ -106,5 +121,24 @@ namespace StarModGen
 					".json" => "object",
 					_ => "object"
 				};
+
+		public static string AsDefaultValue(this TypedConstant c, IPropertySymbol property) 
+		{
+			return property.Type.Name switch
+			{
+				"KeybindList" => c.Type?.Name switch
+				{
+					"String" => $"KeyBindList.Parse({c.ToCSharpString()})",
+					"SButton" => $"new({c.ToCSharpString()})",
+					_ => c.ToCSharpString()
+				},
+				"Keybind" => c.Type?.Name switch
+				{
+					"SButton" => $"new({c.ToCSharpString()})",
+					_ => c.ToCSharpString()
+				},
+				_ => c.ToCSharpString()
+			};
+		}
 	}
 }

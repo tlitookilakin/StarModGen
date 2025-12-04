@@ -15,7 +15,7 @@
 	<PropertyGroup>
 		<PackageId>tlitookilakin.StarModGen</PackageId>
 		<Authors>tlitookilakin</Authors>
-		<Version>0.2.3</Version>
+		<Version>0.2.6</Version>
 		<Description>Generates code to handle common tasks with stardew modding.</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
