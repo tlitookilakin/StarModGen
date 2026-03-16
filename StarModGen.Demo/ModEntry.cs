@@ -1,6 +1,7 @@
 ﻿using StardewModdingAPI;
 using StardModGen.Utils;
 using StarModGen.Lib;
+using System.Reflection;
 
 namespace StarModGen.Demo
 {
@@ -21,6 +22,8 @@ namespace StarModGen.Demo
 
 			config = Config.Create(helper, ModManifest);
 			OnInit?.Invoke(this, new(Monitor, Helper));
+
+			var path = GetType().Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "ProjectPath")?.Value ?? "";
 		}
 	}
 }

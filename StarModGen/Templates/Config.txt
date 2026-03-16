@@ -1,4 +1,6 @@
-﻿namespace {{Type.space}};
+﻿using StardewModdingAPI.Utilities;
+
+namespace {{Type.space}};
 
 partial class {{Type.type}}
 {

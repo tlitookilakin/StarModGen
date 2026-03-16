@@ -37,6 +37,10 @@
 		<CompilerGeneratedFilesOutputPath>GeneratedSources</CompilerGeneratedFilesOutputPath>
 	</PropertyGroup>
 
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<AssemblyMetadata Include="ProjectPath" Value="$(ProjectPath)" />
+	</ItemGroup>
+
 	<Import Project="..\StarModGen\package.targets" Condition="'$(Configuration)'=='Debug'" />
 
 	<ItemGroup>
